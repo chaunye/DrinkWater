@@ -1,6 +1,7 @@
 package com.drinkwater.ui.components
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -43,6 +44,15 @@ class ReminderActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Ensure this activity shows on top of other apps
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+        )
+        setTurnScreenOn(true)
+        setShowWhenLocked(true)
 
         val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME) ?: run { finish(); return }
         val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "未知应用"

@@ -43,7 +43,9 @@
             android:theme="@style/Theme.DrinkWater"
             android:launchMode="singleTask"
             android:taskAffinity=""
-            android:excludeFromRecents="true" />
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true" />
 
         <!-- Accessibility service for app detection -->
         <service
