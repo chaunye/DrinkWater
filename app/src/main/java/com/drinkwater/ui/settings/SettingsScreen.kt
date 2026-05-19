@@ -101,7 +101,7 @@ fun SettingsScreen() {
                             onClick = { scope.launch { settings.setPopupMode("fullscreen") } }
                         )
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.PictureInPicture, contentDescription = null, tint = Color(0xFFFF9800))
                         Spacer(modifier = Modifier.width(12.dp))

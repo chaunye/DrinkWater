@@ -53,7 +53,7 @@ fun MonitorScreen() {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.VisibilityOff, contentDescription = null, tint = Color.LightGray, size = 64.dp)
+                    Icon(Icons.Default.VisibilityOff, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("还没有监控任何应用", color = Color.Gray, fontSize = 16.sp)
                     Spacer(modifier = Modifier.height(8.dp))

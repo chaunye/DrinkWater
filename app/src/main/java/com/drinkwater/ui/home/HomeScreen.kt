@@ -113,7 +113,7 @@ fun HomeScreen() {
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.BarChart, contentDescription = null, tint = Color.LightGray, size = 48.dp)
+                        Icon(Icons.Default.BarChart, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("暂无数据", color = Color.Gray)
                     }
