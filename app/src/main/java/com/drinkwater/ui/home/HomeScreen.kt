@@ -66,6 +66,12 @@ fun HomeScreen() {
             }
         )
 
+        // Usage instructions
+        Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+            MustReadCard()
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
         if (todoItems.isEmpty()) {
             // Empty state
             Box(

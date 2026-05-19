@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,11 +20,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import androidx.lifecycle.lifecycleScope
 import com.drinkwater.DrinkWaterApp
 import com.drinkwater.data.model.PopupMode
@@ -41,6 +45,8 @@ class ReminderActivity : ComponentActivity() {
         const val EXTRA_APP_NAME = "app_name"
         const val EXTRA_REMINDER_CONTENT = "reminder_content"
         const val EXTRA_POPUP_MODE = "popup_mode"
+        const val EXTRA_POPUP_IMAGE = "popup_image"
+        const val EXTRA_BACKGROUND_IMAGE = "background_image"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +65,8 @@ class ReminderActivity : ComponentActivity() {
         val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "未知应用"
         val content = intent.getStringExtra(EXTRA_REMINDER_CONTENT) ?: "你今天喝水了吗？"
         val popupMode = intent.getStringExtra(EXTRA_POPUP_MODE) ?: PopupMode.DEFAULT.name
+        val popupImageUri = intent.getStringExtra(EXTRA_POPUP_IMAGE)
+        val backgroundImageUri = intent.getStringExtra(EXTRA_BACKGROUND_IMAGE)
 
         setContent {
             DrinkWaterTheme {
@@ -66,6 +74,8 @@ class ReminderActivity : ComponentActivity() {
                     FloatingReminderContent(
                         appName = appName,
                         content = content,
+                        popupImageUri = popupImageUri,
+                        backgroundImageUri = backgroundImageUri,
                         onConfirm = { handleAction(packageName, content, ReminderAction.CONFIRMED) },
                         onDelay = { handleAction(packageName, content, ReminderAction.DELAYED) },
                         onCancel = { handleAction(packageName, content, ReminderAction.CANCELLED) }
@@ -74,6 +84,8 @@ class ReminderActivity : ComponentActivity() {
                     FullScreenReminderContent(
                         appName = appName,
                         content = content,
+                        popupImageUri = popupImageUri,
+                        backgroundImageUri = backgroundImageUri,
                         onConfirm = { handleAction(packageName, content, ReminderAction.CONFIRMED) },
                         onDelay = { handleAction(packageName, content, ReminderAction.DELAYED) },
                         onCancel = { handleAction(packageName, content, ReminderAction.CANCELLED) }
@@ -109,6 +121,8 @@ class ReminderActivity : ComponentActivity() {
 fun FullScreenReminderContent(
     appName: String,
     content: String,
+    popupImageUri: String? = null,
+    backgroundImageUri: String? = null,
     onConfirm: () -> Unit,
     onDelay: () -> Unit,
     onCancel: () -> Unit
@@ -123,6 +137,15 @@ fun FullScreenReminderContent(
             .clickable { onCancel() },
         contentAlignment = Alignment.Center
     ) {
+        // Background image
+        if (!backgroundImageUri.isNullOrBlank()) {
+            AsyncImage(
+                model = Uri.parse(backgroundImageUri),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
         AnimatedVisibility(
             visible = visible,
             enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 })
@@ -147,6 +170,20 @@ fun FullScreenReminderContent(
                         color = Color.Gray
                     )
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    // Popup image
+                    if (!popupImageUri.isNullOrBlank()) {
+                        AsyncImage(
+                            model = Uri.parse(popupImageUri),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Fit
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     // Reminder content
                     Text(
@@ -209,6 +246,8 @@ fun FullScreenReminderContent(
 fun FloatingReminderContent(
     appName: String,
     content: String,
+    popupImageUri: String? = null,
+    backgroundImageUri: String? = null,
     onConfirm: () -> Unit,
     onDelay: () -> Unit,
     onCancel: () -> Unit
@@ -219,6 +258,15 @@ fun FloatingReminderContent(
             .background(Color(0x80000000)),
         contentAlignment = Alignment.Center
     ) {
+        // Background image
+        if (!backgroundImageUri.isNullOrBlank()) {
+            AsyncImage(
+                model = Uri.parse(backgroundImageUri),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.8f)
@@ -232,6 +280,18 @@ fun FloatingReminderContent(
             ) {
                 Text(appName, fontSize = 14.sp, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
+                if (!popupImageUri.isNullOrBlank()) {
+                    AsyncImage(
+                        model = Uri.parse(popupImageUri),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 160.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 Text(content, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                 Spacer(modifier = Modifier.height(20.dp))
                 Row(

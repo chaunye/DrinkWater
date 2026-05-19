@@ -6,17 +6,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import com.drinkwater.DrinkWaterApp
 import com.drinkwater.MainActivity
 import com.drinkwater.data.db.AppDatabase
 import com.drinkwater.data.db.SettingsDataStore
 import com.drinkwater.data.model.PopupMode
-import com.drinkwater.data.model.ReminderAction
-import com.drinkwater.data.model.ReminderLog
 import com.drinkwater.ui.components.ReminderActivity
 import com.drinkwater.util.TimeUtil
 import kotlinx.coroutines.*
@@ -27,7 +23,6 @@ class AppMonitorService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var lastTriggeredPackage: String? = null
     private var lastTriggerTime: Long = 0
-    private var overlay: ReminderOverlay? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
@@ -105,53 +100,25 @@ class AppMonitorService : AccessibilityService() {
         lastTriggeredPackage = packageName
         lastTriggerTime = now
 
-        // Get popup mode
-        val popupMode = settings.popupMode.first()
-        val useOverlay = popupMode == "floating" || app.popupMode == PopupMode.FLOATING
+        // Get popup mode - use Activity approach for reliable top-of-screen display
+        val globalPopupMode = settings.popupMode.first()
+        val popupMode = if (app.popupMode == PopupMode.FLOATING) "floating" else globalPopupMode
 
-        val handleAction = { action: ReminderAction ->
-            scope.launch {
-                db.reminderLogDao().insert(
-                    ReminderLog(
-                        appPackageName = packageName,
-                        reminderContent = reminderContent,
-                        action = action
-                    )
-                )
-            }
-            if (action == ReminderAction.CONFIRMED) {
-                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                if (launchIntent != null) {
-                    startActivity(launchIntent)
-                }
-            }
+        // Always use Activity approach - it gets proper z-order from the system
+        // (like alarm/call/SMS apps), unlike WindowManager overlay which gets covered
+        val intent = Intent(applicationContext, ReminderActivity::class.java).apply {
+            putExtra(ReminderActivity.EXTRA_PACKAGE_NAME, packageName)
+            putExtra(ReminderActivity.EXTRA_APP_NAME, app.appName)
+            putExtra(ReminderActivity.EXTRA_REMINDER_CONTENT, reminderContent)
+            putExtra(ReminderActivity.EXTRA_POPUP_MODE, popupMode)
+            putExtra(ReminderActivity.EXTRA_POPUP_IMAGE, app.popupImageUri)
+            putExtra(ReminderActivity.EXTRA_BACKGROUND_IMAGE, app.backgroundImageUri)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
+        startActivity(intent)
 
-        if (useOverlay && Settings.canDrawOverlays(applicationContext)) {
-            // Use overlay window (shows on top of other apps)
-            withContext(Dispatchers.Main) {
-                if (overlay == null) overlay = ReminderOverlay(applicationContext)
-                overlay?.show(
-                    appName = app.appName,
-                    content = reminderContent,
-                    popupImageUri = app.popupImageUri,
-                    backgroundImageUri = app.backgroundImageUri,
-                    onConfirm = { handleAction(ReminderAction.CONFIRMED) },
-                    onDelay = { handleAction(ReminderAction.DELAYED) },
-                    onCancel = { handleAction(ReminderAction.CANCELLED) }
-                )
-            }
-        } else {
-            // Fallback to activity
-            val intent = Intent(applicationContext, ReminderActivity::class.java).apply {
-                putExtra(ReminderActivity.EXTRA_PACKAGE_NAME, packageName)
-                putExtra(ReminderActivity.EXTRA_APP_NAME, app.appName)
-                putExtra(ReminderActivity.EXTRA_REMINDER_CONTENT, reminderContent)
-                putExtra(ReminderActivity.EXTRA_POPUP_MODE, PopupMode.DEFAULT.name)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            }
-            startActivity(intent)
-        }
+        // Log the action after Activity finishes (via ReminderActivity.handleAction)
+        // No need for overlay fallback anymore
     }
 
     override fun onInterrupt() {}
@@ -201,8 +168,6 @@ class AppMonitorService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        overlay?.dismiss()
-        overlay = null
         scope.cancel()
         instance = null
         // Schedule restart

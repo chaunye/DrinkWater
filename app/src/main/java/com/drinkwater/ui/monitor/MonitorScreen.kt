@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -197,24 +198,37 @@ fun MonitoredAppCard(
 fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit) {
     val context = LocalContext.current
     val pm = context.packageManager
-    var apps by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+    val ownPackage = context.packageName
+    var userApps by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+    var systemApps by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
     var isLoading by remember { mutableStateOf(true) }
+    var showSystemApps by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            .sortedBy { pm.getApplicationLabel(it).toString() }
-            .map { it.packageName to pm.getApplicationLabel(it).toString() }
+        val allApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            .filter { it.packageName != ownPackage }
+            .map { app ->
+                val name = pm.getApplicationLabel(app).toString()
+                val isUserApp = pm.getLaunchIntentForPackage(app.packageName) != null
+                Triple(app.packageName, name, isUserApp)
+            }
+        userApps = allApps.filter { it.third }.map { it.first to it.second }.sortedBy { it.second }
+        systemApps = allApps.filter { !it.third }.map { it.first to it.second }.sortedBy { it.second }
         isLoading = false
     }
 
     var searchQuery by remember { mutableStateOf("") }
-    val filtered = apps.filter { (pkg, name) ->
+    val filteredUser = userApps.filter { (pkg, name) ->
         searchQuery.isBlank() || name.contains(searchQuery, ignoreCase = true) || pkg.contains(searchQuery, ignoreCase = true)
     }
+    val filteredSystem = systemApps.filter { (pkg, name) ->
+        searchQuery.isBlank() || name.contains(searchQuery, ignoreCase = true) || pkg.contains(searchQuery, ignoreCase = true)
+    }
+    val displayApps = if (showSystemApps) filteredUser + filteredSystem else filteredUser
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("选择要监控的应用 (${apps.size})") },
+        title = { Text("选择要监控的应用") },
         text = {
             Column {
                 OutlinedTextField(
@@ -225,7 +239,23 @@ fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit)
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("用户应用 ${filteredUser.size}", fontSize = 12.sp, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("显示系统应用", fontSize = 12.sp, color = Color.Gray)
+                        Switch(
+                            checked = showSystemApps,
+                            onCheckedChange = { showSystemApps = it },
+                            modifier = Modifier.scale(0.7f)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
                 if (isLoading) {
                     Box(
                         modifier = Modifier.fillMaxWidth().height(200.dp),
@@ -233,9 +263,16 @@ fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit)
                     ) {
                         CircularProgressIndicator()
                     }
+                } else if (displayApps.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("没有找到应用", color = Color.Gray)
+                    }
                 } else {
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(filtered, key = { it.first }) { (pkg, name) ->
+                        items(displayApps, key = { it.first }) { (pkg, name) ->
                             val icon = remember(pkg) {
                                 try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
                             }
