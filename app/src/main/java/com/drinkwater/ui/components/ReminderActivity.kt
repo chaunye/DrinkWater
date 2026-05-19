@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -118,71 +119,85 @@ fun FullScreenReminderContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xF0000000)),
+            .background(Color(0x99000000))
+            .clickable { onCancel() },
         contentAlignment = Alignment.Center
     ) {
         AnimatedVisibility(
             visible = visible,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 })
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 })
         ) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
+                    .padding(24.dp)
+                    .clickable { /* consume click */ },
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(32.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // App name
                     Text(
                         text = appName,
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
                         color = Color.Gray
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Reminder content
                     Text(
                         text = content,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         color = Color(0xFF212121)
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Buttons
                     Button(
                         onClick = onConfirm,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp),
+                            .height(48.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("确认打开", fontSize = 16.sp)
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("确认打开", fontSize = 15.sp)
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedButton(
-                        onClick = onDelay,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(12.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFFF9800))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("延迟提醒", fontSize = 16.sp, color = Color(0xFFFF9800))
-                    }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(
-                        onClick = onCancel,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = null, tint = Color.Gray)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("取消", color = Color.Gray)
+                        OutlinedButton(
+                            onClick = onDelay,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("延迟", fontSize = 14.sp, color = Color(0xFFFF9800))
+                        }
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("取消", fontSize = 14.sp, color = Color.Gray)
+                        }
                     }
                 }
             }

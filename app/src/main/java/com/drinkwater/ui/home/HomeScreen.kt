@@ -190,7 +190,7 @@ fun MustReadCard() {
 
                 MustReadItem(Icons.Default.Visibility, "无障碍权限", "首次使用请在设置中开启无障碍服务，否则无法检测应用启动。")
                 MustReadItem(Icons.Default.Notifications, "通知权限", "开启通知以接收定时提醒和背词提醒。")
-                MustReadItem(Icons.Default.Add, "添加监控", "在「监控」页面点击 + 添加你想拦截的应用，每条默认提醒是"你今天喝水了吗？"。")
+                MustReadItem(Icons.Default.Add, "添加监控", "在「监控」页面点击 + 添加你想拦截的应用，每条默认提醒是「你今天喝水了吗？」。")
                 MustReadItem(Icons.Default.MenuBook, "生词本", "在「生词本」页面导入 Excel/CSV/TXT 词表，背词提醒会和应用监控联动。")
                 MustReadItem(Icons.Default.Schedule, "定时提醒", "在「监控」页面配置应用时可设置生效时段，支持全天候或自定义时间段。")
                 MustReadItem(Icons.Default.Fullscreen, "弹窗模式", "在「设置」中可切换全屏弹窗或悬浮窗模式。")

@@ -201,7 +201,7 @@ fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    items(filtered.take(50), key = { it.first }) { (pkg, name) ->
+                    items(filtered, key = { it.first }) { (pkg, name) ->
                         val icon = remember(pkg) {
                             try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
                         }
