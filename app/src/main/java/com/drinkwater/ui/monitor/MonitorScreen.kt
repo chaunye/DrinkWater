@@ -1,6 +1,9 @@
 package com.drinkwater.ui.monitor
 
 import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -15,13 +18,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import coil.compose.rememberAsyncImagePainter
 import com.drinkwater.DrinkWaterApp
 import com.drinkwater.data.model.MonitoredApp
 import com.drinkwater.data.model.PopupMode
@@ -276,6 +282,30 @@ fun AppConfigDialog(app: MonitoredApp, onDismiss: () -> Unit) {
     var isAllDay by remember { mutableStateOf(app.isAllDay) }
     var startTime by remember { mutableStateOf(app.startTime) }
     var endTime by remember { mutableStateOf(app.endTime) }
+    var popupImageUri by remember { mutableStateOf(app.popupImageUri) }
+    var backgroundImageUri by remember { mutableStateOf(app.backgroundImageUri) }
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            popupImageUri = it.toString()
+            scope.launch {
+                db.monitoredAppDao().update(app.copy(popupImageUri = it.toString()))
+            }
+        }
+    }
+
+    val bgImagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            backgroundImageUri = it.toString()
+            scope.launch {
+                db.monitoredAppDao().update(app.copy(backgroundImageUri = it.toString()))
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -314,6 +344,87 @@ fun AppConfigDialog(app: MonitoredApp, onDismiss: () -> Unit) {
                         }
                     }) {
                         Icon(Icons.Default.Add, contentDescription = "添加")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("自定义图片", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Popup image
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("弹窗图片", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (popupImageUri != null) {
+                            Box(modifier = Modifier.height(80.dp).fillMaxWidth()) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = popupImageUri),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                IconButton(
+                                    onClick = {
+                                        popupImageUri = null
+                                        scope.launch {
+                                            db.monitoredAppDao().update(app.copy(popupImageUri = null))
+                                        }
+                                    },
+                                    modifier = Modifier.align(Alignment.TopEnd).size(24.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "删除", modifier = Modifier.size(16.dp), tint = Color.White)
+                                }
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { imagePicker.launch("image/*") },
+                                modifier = Modifier.fillMaxWidth().height(80.dp)
+                            ) {
+                                Icon(Icons.Default.Image, contentDescription = null)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("选择图片", fontSize = 12.sp)
+                            }
+                        }
+                    }
+
+                    // Background image
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("背景图片", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (backgroundImageUri != null) {
+                            Box(modifier = Modifier.height(80.dp).fillMaxWidth()) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = backgroundImageUri),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                IconButton(
+                                    onClick = {
+                                        backgroundImageUri = null
+                                        scope.launch {
+                                            db.monitoredAppDao().update(app.copy(backgroundImageUri = null))
+                                        }
+                                    },
+                                    modifier = Modifier.align(Alignment.TopEnd).size(24.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "删除", modifier = Modifier.size(16.dp), tint = Color.White)
+                                }
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { bgImagePicker.launch("image/*") },
+                                modifier = Modifier.fillMaxWidth().height(80.dp)
+                            ) {
+                                Icon(Icons.Default.Image, contentDescription = null)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("选择图片", fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
 

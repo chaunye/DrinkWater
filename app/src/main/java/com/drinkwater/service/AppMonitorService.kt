@@ -94,6 +94,8 @@ class AppMonitorService : AccessibilityService() {
                 overlay?.show(
                     appName = app.appName,
                     content = reminder.content,
+                    popupImageUri = app.popupImageUri,
+                    backgroundImageUri = app.backgroundImageUri,
                     onConfirm = { handleAction(ReminderAction.CONFIRMED) },
                     onDelay = { handleAction(ReminderAction.DELAYED) },
                     onCancel = { handleAction(ReminderAction.CANCELLED) }

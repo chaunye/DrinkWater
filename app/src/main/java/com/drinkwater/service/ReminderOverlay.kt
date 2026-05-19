@@ -2,9 +2,11 @@ package com.drinkwater.service
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.net.Uri
 import android.os.Build
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,7 +19,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +35,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import coil.compose.rememberAsyncImagePainter
 
 class ReminderOverlay(private val context: Context) {
 
@@ -40,6 +45,8 @@ class ReminderOverlay(private val context: Context) {
     fun show(
         appName: String,
         content: String,
+        popupImageUri: String? = null,
+        backgroundImageUri: String? = null,
         onConfirm: () -> Unit,
         onDelay: () -> Unit,
         onCancel: () -> Unit
@@ -70,6 +77,8 @@ class ReminderOverlay(private val context: Context) {
                 OverlayContent(
                     appName = appName,
                     content = content,
+                    popupImageUri = popupImageUri,
+                    backgroundImageUri = backgroundImageUri,
                     onConfirm = {
                         dismiss()
                         onConfirm()
@@ -106,6 +115,8 @@ class ReminderOverlay(private val context: Context) {
 private fun OverlayContent(
     appName: String,
     content: String,
+    popupImageUri: String? = null,
+    backgroundImageUri: String? = null,
     onConfirm: () -> Unit,
     onDelay: () -> Unit,
     onCancel: () -> Unit
@@ -117,6 +128,16 @@ private fun OverlayContent(
             .clickable { onCancel() },
         contentAlignment = Alignment.Center
     ) {
+        // Background image
+        if (backgroundImageUri != null) {
+            Image(
+                painter = rememberAsyncImagePainter(model = backgroundImageUri),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.85f)
@@ -136,6 +157,21 @@ private fun OverlayContent(
                     color = Color.Gray
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+
+                // Popup image
+                if (popupImageUri != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = popupImageUri),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Text(
                     text = content,
                     fontSize = 20.sp,

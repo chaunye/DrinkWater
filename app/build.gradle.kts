@@ -85,6 +85,9 @@ dependencies {
         exclude(group = "org.apache.xmlbeans")
     }
 
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

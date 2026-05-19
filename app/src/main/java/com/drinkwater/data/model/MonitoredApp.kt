@@ -11,7 +11,9 @@ data class MonitoredApp(
     val popupMode: PopupMode = PopupMode.DEFAULT,
     val startTime: String = "00:00",
     val endTime: String = "23:59",
-    val isAllDay: Boolean = true
+    val isAllDay: Boolean = true,
+    val popupImageUri: String? = null,
+    val backgroundImageUri: String? = null
 )
 
 enum class PopupMode {
