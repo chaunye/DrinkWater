@@ -1,6 +1,8 @@
 package com.drinkwater.ui.monitor
 
 import android.content.pm.PackageManager
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +26,7 @@ import com.drinkwater.DrinkWaterApp
 import com.drinkwater.data.model.MonitoredApp
 import com.drinkwater.data.model.PopupMode
 import com.drinkwater.data.model.Reminder
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,39 +136,52 @@ fun MonitoredAppCard(
             null
         }
     }
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(50)
+        visible = true
+    }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
+            animationSpec = tween(300),
+            initialOffsetY = { it / 4 }
+        )
     ) {
-        Row(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .clickable { onClick() },
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            if (icon != null) {
-                Image(
-                    bitmap = icon.toBitmap(48, 48).asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp)
-                )
-            } else {
-                Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Image(
+                        bitmap = icon.toBitmap(48, 48).asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                } else {
+                    Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(app.appName, fontWeight = FontWeight.Medium)
+                    Text(
+                        if (app.isAllDay) "全天候监控" else "${app.startTime} - ${app.endTime}",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+                Switch(checked = app.isEnabled, onCheckedChange = { onToggle() })
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(app.appName, fontWeight = FontWeight.Medium)
-                Text(
-                    if (app.isAllDay) "全天候监控" else "${app.startTime} - ${app.endTime}",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-            }
-            Switch(checked = app.isEnabled, onCheckedChange = { onToggle() })
         }
     }
 }

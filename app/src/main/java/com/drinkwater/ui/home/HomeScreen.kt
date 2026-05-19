@@ -1,5 +1,7 @@
 package com.drinkwater.ui.home
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -24,6 +27,7 @@ import com.drinkwater.DrinkWaterApp
 import com.drinkwater.data.db.DailyActionCount
 import com.drinkwater.data.model.ReminderAction
 import com.drinkwater.util.TimeUtil
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,66 +75,96 @@ fun HomeScreen() {
         Text("今日统计", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        var statsVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(100)
+            statsVisible = true
+        }
+
+        AnimatedVisibility(
+            visible = statsVisible,
+            enter = fadeIn(animationSpec = tween(400)) + slideInVertically(
+                animationSpec = tween(400),
+                initialOffsetY = { it / 3 }
+            )
         ) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                title = "被拦截",
-                value = todayTotal.toString(),
-                color = Color(0xFF2196F3),
-                icon = Icons.Default.Shield
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                title = "确认打开",
-                value = todayConfirmed.toString(),
-                color = Color(0xFFFF9800),
-                icon = Icons.Default.CheckCircle
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                title = "已取消",
-                value = todayCancelled.toString(),
-                color = Color(0xFF4CAF50),
-                icon = Icons.Default.Cancel
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "被拦截",
+                    value = todayTotal.toString(),
+                    color = Color(0xFF2196F3),
+                    icon = Icons.Default.Shield
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "确认打开",
+                    value = todayConfirmed.toString(),
+                    color = Color(0xFFFF9800),
+                    icon = Icons.Default.CheckCircle
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    title = "已取消",
+                    value = todayCancelled.toString(),
+                    color = Color(0xFF4CAF50),
+                    icon = Icons.Default.Cancel
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // 7-day trend
-        Text("7天趋势", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Spacer(modifier = Modifier.height(12.dp))
+        var trendVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(200)
+            trendVisible = true
+        }
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        AnimatedVisibility(
+            visible = trendVisible,
+            enter = fadeIn(animationSpec = tween(400)) + slideInVertically(
+                animationSpec = tween(400),
+                initialOffsetY = { it / 3 }
+            )
         ) {
-            if (dailyData.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
+            Column {
+                Text("7天趋势", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.BarChart, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("暂无数据", color = Color.Gray)
+                    if (dailyData.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.BarChart, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(48.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("暂无数据", color = Color.Gray)
+                            }
+                        }
+                    } else {
+                        TrendChart(
+                            data = dailyData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(16.dp)
+                        )
                     }
                 }
-            } else {
-                TrendChart(
-                    data = dailyData,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(16.dp)
-                )
             }
         }
     }

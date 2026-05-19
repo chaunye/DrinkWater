@@ -163,7 +163,7 @@ fun SettingsScreen() {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("DrinkWater v1.0.0", fontWeight = FontWeight.Medium)
+                    Text("DrinkWater v1.1.0", fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("开源离线自律提醒工具", fontSize = 13.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(4.dp))

@@ -2,7 +2,8 @@ package com.drinkwater.ui.components
 
 import android.content.Intent
 import android.provider.Settings
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -16,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -127,13 +129,22 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             repeat(3) { index ->
+                val isSelected = pagerState.currentPage == index
+                val width by animateDpAsState(
+                    targetValue = if (isSelected) 24.dp else 8.dp,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "indicator_width"
+                )
+                val color by animateColorAsState(
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "indicator_color"
+                )
                 Box(
                     modifier = Modifier
-                        .size(if (pagerState.currentPage == index) 24.dp else 8.dp, 8.dp)
-                        .background(
-                            if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else Color.LightGray,
-                            RoundedCornerShape(4.dp)
-                        )
+                        .size(width, 8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(color)
                 )
             }
         }
