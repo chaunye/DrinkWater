@@ -13,9 +13,10 @@ import com.drinkwater.data.model.*
         ReminderLog::class,
         WordList::class,
         Word::class,
-        TimedReminder::class
+        TimedReminder::class,
+        TodoItem::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun wordListDao(): WordListDao
     abstract fun wordDao(): WordDao
     abstract fun timedReminderDao(): TimedReminderDao
+    abstract fun todoItemDao(): TodoItemDao
 
     companion object {
         @Volatile

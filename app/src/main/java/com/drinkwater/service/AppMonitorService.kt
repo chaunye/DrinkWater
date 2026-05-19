@@ -56,10 +56,50 @@ class AppMonitorService : AccessibilityService() {
         // Check time range
         if (!app.isAllDay && !TimeUtil.isInTimeRange(app.startTime, app.endTime)) return
 
-        // Get a random reminder
-        val reminders = db.reminderDao().getByAppOnce(packageName)
-        if (reminders.isEmpty()) return
-        val reminder = reminders.random()
+        // Collect all possible reminders
+        val allReminders = mutableListOf<String>()
+
+        // Get app-specific reminders
+        val appReminders = db.reminderDao().getByAppOnce(packageName)
+        allReminders.addAll(appReminders.map { it.content })
+
+        // Get global todo items (applyToAll = true, not completed)
+        val globalTodos = db.todoItemDao().getGlobalUncompleted()
+        val globalTimeEnabled = settings.globalTimeEnabled.first()
+        val globalStartTime = settings.globalStartTime.first()
+        val globalEndTime = settings.globalEndTime.first()
+
+        globalTodos.forEach { todo ->
+            // Check if todo has its own time setting or use global
+            val inTimeRange = if (!todo.isAllDay) {
+                TimeUtil.isInTimeRange(todo.startTime, todo.endTime)
+            } else if (globalTimeEnabled) {
+                TimeUtil.isInTimeRange(globalStartTime, globalEndTime)
+            } else {
+                true // No time restriction
+            }
+            if (inTimeRange) {
+                allReminders.add(todo.content)
+            }
+        }
+
+        // Get non-global todo items that are uncompleted
+        val otherTodos = db.todoItemDao().getAllUncompleted().filter { !it.applyToAll }
+        otherTodos.forEach { todo ->
+            val inTimeRange = if (!todo.isAllDay) {
+                TimeUtil.isInTimeRange(todo.startTime, todo.endTime)
+            } else if (globalTimeEnabled) {
+                TimeUtil.isInTimeRange(globalStartTime, globalEndTime)
+            } else {
+                true
+            }
+            if (inTimeRange) {
+                allReminders.add(todo.content)
+            }
+        }
+
+        if (allReminders.isEmpty()) return
+        val reminderContent = allReminders.random()
 
         // Update debounce
         lastTriggeredPackage = packageName
@@ -74,7 +114,7 @@ class AppMonitorService : AccessibilityService() {
                 db.reminderLogDao().insert(
                     ReminderLog(
                         appPackageName = packageName,
-                        reminderContent = reminder.content,
+                        reminderContent = reminderContent,
                         action = action
                     )
                 )
@@ -93,7 +133,7 @@ class AppMonitorService : AccessibilityService() {
                 if (overlay == null) overlay = ReminderOverlay(applicationContext)
                 overlay?.show(
                     appName = app.appName,
-                    content = reminder.content,
+                    content = reminderContent,
                     popupImageUri = app.popupImageUri,
                     backgroundImageUri = app.backgroundImageUri,
                     onConfirm = { handleAction(ReminderAction.CONFIRMED) },
@@ -106,7 +146,7 @@ class AppMonitorService : AccessibilityService() {
             val intent = Intent(applicationContext, ReminderActivity::class.java).apply {
                 putExtra(ReminderActivity.EXTRA_PACKAGE_NAME, packageName)
                 putExtra(ReminderActivity.EXTRA_APP_NAME, app.appName)
-                putExtra(ReminderActivity.EXTRA_REMINDER_CONTENT, reminder.content)
+                putExtra(ReminderActivity.EXTRA_REMINDER_CONTENT, reminderContent)
                 putExtra(ReminderActivity.EXTRA_POPUP_MODE, PopupMode.DEFAULT.name)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
