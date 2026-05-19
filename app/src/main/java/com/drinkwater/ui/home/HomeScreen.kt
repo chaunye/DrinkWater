@@ -578,6 +578,7 @@ fun GlobalTimeSettingsDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MustReadCard() {
     val context = LocalContext.current
