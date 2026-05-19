@@ -1,8 +1,15 @@
 package com.drinkwater.service
 
 import android.accessibilityservice.AccessibilityService
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
+import android.os.Build
 import android.view.accessibility.AccessibilityEvent
+import com.drinkwater.DrinkWaterApp
+import com.drinkwater.MainActivity
 import com.drinkwater.data.db.AppDatabase
 import com.drinkwater.data.db.SettingsDataStore
 import com.drinkwater.data.model.PopupMode
@@ -77,12 +84,70 @@ class AppMonitorService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        startForegroundNotification()
+    }
+
+    private fun startForegroundNotification() {
+        val channelId = DrinkWaterApp.CHANNEL_SERVICE
+        val manager = getSystemService(NotificationManager::class.java)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "后台服务",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "保持应用监控服务运行"
+                setShowBadge(false)
+            }
+            manager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = Notification.Builder(this, channelId)
+            .setContentTitle("DrinkWater 运行中")
+            .setContentText("正在监控应用，点击查看详情")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
+
+        try {
+            startForeground(1, notification)
+        } catch (e: Exception) {
+            // Some ROMs may not support foreground service for accessibility
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         scope.cancel()
         instance = null
+        // Schedule restart
+        scheduleRestart()
+    }
+
+    private fun scheduleRestart() {
+        val intent = Intent(applicationContext, RestartReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            applicationContext, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmManager = getSystemService(android.app.AlarmManager::class.java)
+        try {
+            alarmManager.set(
+                android.app.AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 1000,
+                pendingIntent
+            )
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
 
     companion object {
