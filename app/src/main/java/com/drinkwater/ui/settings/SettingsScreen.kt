@@ -1,6 +1,7 @@
 package com.drinkwater.ui.settings
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -31,10 +32,11 @@ fun SettingsScreen() {
     val settings = remember { SettingsDataStore(context) }
     val scope = rememberCoroutineScope()
 
-    val popupMode by settings.popupMode.collectAsState(initial = "fullscreen")
+    val popupMode by settings.popupMode.collectAsState(initial = "floating")
     val delayMinutes by settings.delayMinutes.collectAsState(initial = 5)
     val notificationsEnabled by settings.notificationsEnabled.collectAsState(initial = true)
     val serviceRunning = AppMonitorService.isRunning()
+    val canOverlay = remember { Settings.canDrawOverlays(context) }
 
     Column(
         modifier = Modifier
@@ -85,6 +87,51 @@ fun SettingsScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Overlay permission
+            SectionTitle("悬浮窗权限")
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (canOverlay) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color(0xFFFF9800).copy(alpha = 0.1f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:${context.packageName}")
+                            )
+                            context.startActivity(intent)
+                        }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        if (canOverlay) Icons.Default.CheckCircle else Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = if (canOverlay) Color(0xFF4CAF50) else Color(0xFFFF9800)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            if (canOverlay) "悬浮窗权限已开启" else "悬浮窗权限未开启",
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            if (canOverlay) "弹窗可以显示在其他应用上方" else "点击前往设置开启，否则弹窗可能被遮挡",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Popup mode
             SectionTitle("弹窗模式")
             Card(
@@ -93,22 +140,28 @@ fun SettingsScreen() {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Fullscreen, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.PictureInPicture, contentDescription = null, tint = Color(0xFFFF9800))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("全屏弹窗", modifier = Modifier.weight(1f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("弹窗模式（推荐）", fontWeight = FontWeight.Medium)
+                            Text("小窗口弹出，不遮挡整个屏幕", fontSize = 12.sp, color = Color.Gray)
+                        }
                         RadioButton(
-                            selected = popupMode == "fullscreen",
-                            onClick = { scope.launch { settings.setPopupMode("fullscreen") } }
+                            selected = popupMode == "floating",
+                            onClick = { scope.launch { settings.setPopupMode("floating") } }
                         )
                     }
                     Divider(modifier = Modifier.padding(vertical = 8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.PictureInPicture, contentDescription = null, tint = Color(0xFFFF9800))
+                        Icon(Icons.Default.Fullscreen, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("悬浮窗", modifier = Modifier.weight(1f))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("全屏模式", fontWeight = FontWeight.Medium)
+                            Text("覆盖整个屏幕，更醒目", fontSize = 12.sp, color = Color.Gray)
+                        }
                         RadioButton(
-                            selected = popupMode == "floating",
-                            onClick = { scope.launch { settings.setPopupMode("floating") } }
+                            selected = popupMode == "fullscreen",
+                            onClick = { scope.launch { settings.setPopupMode("fullscreen") } }
                         )
                     }
                 }

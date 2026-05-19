@@ -1,6 +1,7 @@
 package com.drinkwater.ui.components
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -35,9 +36,10 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
     val context = LocalContext.current
     val settings = remember { SettingsDataStore(context) }
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
 
     val serviceRunning = AppMonitorService.isRunning()
+    val canOverlay = remember { Settings.canDrawOverlays(context) }
 
     Column(
         modifier = Modifier
@@ -96,6 +98,20 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
                     }
                 )
                 1 -> GuidePage(
+                    icon = Icons.Default.Layers,
+                    title = "悬浮窗权限",
+                    description = "开启悬浮窗权限后，提醒弹窗可以显示在其他应用上方，不会被遮挡。",
+                    actionText = if (canOverlay) "已开启" else "前往开启",
+                    isDone = canOverlay,
+                    onAction = {
+                        val intent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:${context.packageName}")
+                        )
+                        context.startActivity(intent)
+                    }
+                )
+                2 -> GuidePage(
                     icon = Icons.Default.Notifications,
                     title = "通知权限",
                     description = "开启通知权限以接收定时提醒和背词提醒。",
@@ -107,7 +123,7 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
                         })
                     }
                 )
-                2 -> GuidePage(
+                3 -> GuidePage(
                     icon = Icons.Default.Celebration,
                     title = "设置完成！",
                     description = "现在您可以开始添加要监控的应用了。\n\n点击首页右上角 + 添加应用，设置您的第一条提醒吧！",
@@ -128,7 +144,7 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            repeat(3) { index ->
+            repeat(4) { index ->
                 val isSelected = pagerState.currentPage == index
                 val width by animateDpAsState(
                     targetValue = if (isSelected) 24.dp else 8.dp,
@@ -151,7 +167,7 @@ fun PermissionGuideScreen(onComplete: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (pagerState.currentPage < 2) {
+        if (pagerState.currentPage < 3) {
             TextButton(onClick = {
                 scope.launch { settings.setFirstLaunchDone() }
                 onComplete()

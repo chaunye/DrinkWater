@@ -191,12 +191,16 @@ fun MonitoredAppCard(
 fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit) {
     val context = LocalContext.current
     val pm = context.packageManager
-    val apps = remember {
-        pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
+    var apps by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             .sortedBy { pm.getApplicationLabel(it).toString() }
             .map { it.packageName to pm.getApplicationLabel(it).toString() }
+        isLoading = false
     }
+
     var searchQuery by remember { mutableStateOf("") }
     val filtered = apps.filter { (pkg, name) ->
         searchQuery.isBlank() || name.contains(searchQuery, ignoreCase = true) || pkg.contains(searchQuery, ignoreCase = true)
@@ -204,7 +208,7 @@ fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("选择要监控的应用") },
+        title = { Text("选择要监控的应用 (${apps.size})") },
         text = {
             Column {
                 OutlinedTextField(
@@ -216,27 +220,39 @@ fun AddAppDialog(onDismiss: () -> Unit, onAppSelected: (String, String) -> Unit)
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    items(filtered, key = { it.first }) { (pkg, name) ->
-                        val icon = remember(pkg) {
-                            try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onAppSelected(pkg, name) }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (icon != null) {
-                                Image(
-                                    bitmap = icon.toBitmap(36, 36).asImageBitmap(),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(filtered, key = { it.first }) { (pkg, name) ->
+                            val icon = remember(pkg) {
+                                try { pm.getApplicationIcon(pkg) } catch (e: Exception) { null }
                             }
-                            Text(name)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onAppSelected(pkg, name) }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (icon != null) {
+                                    Image(
+                                        bitmap = icon.toBitmap(36, 36).asImageBitmap(),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                }
+                                Column {
+                                    Text(name)
+                                    Text(pkg, fontSize = 11.sp, color = Color.Gray)
+                                }
+                            }
                         }
                     }
                 }

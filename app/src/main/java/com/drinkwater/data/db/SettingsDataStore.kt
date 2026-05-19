@@ -17,13 +17,15 @@ class SettingsDataStore(private val context: Context) {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         val SERVICE_ENABLED = booleanPreferencesKey("service_enabled")
+        val MUST_READ_DISMISSED = booleanPreferencesKey("must_read_dismissed")
     }
 
-    val popupMode: Flow<String> = context.dataStore.data.map { it[POPUP_MODE] ?: "fullscreen" }
+    val popupMode: Flow<String> = context.dataStore.data.map { it[POPUP_MODE] ?: "floating" }
     val delayMinutes: Flow<Int> = context.dataStore.data.map { it[DELAY_MINUTES] ?: 5 }
     val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { it[NOTIFICATIONS_ENABLED] ?: true }
     val isFirstLaunch: Flow<Boolean> = context.dataStore.data.map { it[FIRST_LAUNCH] ?: true }
     val serviceEnabled: Flow<Boolean> = context.dataStore.data.map { it[SERVICE_ENABLED] ?: true }
+    val mustReadDismissed: Flow<Boolean> = context.dataStore.data.map { it[MUST_READ_DISMISSED] ?: false }
 
     suspend fun setPopupMode(mode: String) {
         context.dataStore.edit { it[POPUP_MODE] = mode }
@@ -43,5 +45,9 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setServiceEnabled(enabled: Boolean) {
         context.dataStore.edit { it[SERVICE_ENABLED] = enabled }
+    }
+
+    suspend fun setMustReadDismissed() {
+        context.dataStore.edit { it[MUST_READ_DISMISSED] = true }
     }
 }

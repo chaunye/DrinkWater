@@ -198,24 +198,32 @@ fun StatCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MustReadCard() {
+    val context = LocalContext.current
+    val settings = remember { com.drinkwater.data.db.SettingsDataStore(context) }
+    val mustReadDismissed by settings.mustReadDismissed.collectAsState(initial = false)
     var expanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    val cardColor = if (mustReadDismissed) Color(0xFFF5F5F5) else Color(0xFFFFF3E0)
+    val titleColor = if (mustReadDismissed) Color.Gray else Color(0xFFE65100)
+    val iconColor = if (mustReadDismissed) Color.Gray else Color(0xFFFF9800)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
         onClick = { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Info, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("用前必看", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                Text("用前必看", fontSize = if (mustReadDismissed) 16.sp else 18.sp, fontWeight = if (mustReadDismissed) FontWeight.Medium else FontWeight.Bold, color = titleColor)
                 Spacer(modifier = Modifier.weight(1f))
                 Icon(
                     if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
-                    tint = Color(0xFFE65100)
+                    tint = titleColor
                 )
             }
 
@@ -223,11 +231,12 @@ fun MustReadCard() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 MustReadItem(Icons.Default.Visibility, "无障碍权限", "首次使用请在设置中开启无障碍服务，否则无法检测应用启动。")
+                MustReadItem(Icons.Default.Layers, "悬浮窗权限", "开启悬浮窗权限后，提醒弹窗可以显示在其他应用上方，不会被遮挡。")
                 MustReadItem(Icons.Default.Notifications, "通知权限", "开启通知以接收定时提醒和背词提醒。")
                 MustReadItem(Icons.Default.Add, "添加监控", "在「监控」页面点击 + 添加你想拦截的应用，每条默认提醒是「你今天喝水了吗？」。")
                 MustReadItem(Icons.Default.MenuBook, "生词本", "在「生词本」页面导入 Excel/CSV/TXT 词表，背词提醒会和应用监控联动。")
                 MustReadItem(Icons.Default.Schedule, "定时提醒", "在「监控」页面配置应用时可设置生效时段，支持全天候或自定义时间段。")
-                MustReadItem(Icons.Default.Fullscreen, "弹窗模式", "在「设置」中可切换全屏弹窗或悬浮窗模式。")
+                MustReadItem(Icons.Default.PictureInPicture, "弹窗模式", "在「设置」中可切换弹窗模式或全屏模式，推荐使用弹窗模式。")
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -248,6 +257,26 @@ fun MustReadCard() {
                             color = Color(0xFF2E7D32)
                         )
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            settings.setMustReadDismissed()
+                        }
+                        expanded = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (mustReadDismissed) Color.Gray else Color(0xFF4CAF50)
+                    )
+                ) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (mustReadDismissed) "已了解" else "我知道了", fontSize = 16.sp)
                 }
             }
         }
