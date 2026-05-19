@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DrinkWater</string>
+    <string name="accessibility_service_description">DrinkWater需要无障碍权限来检测应用启动，以便在您打开指定应用时提醒您。</string>
+</resources>
