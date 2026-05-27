@@ -273,5 +273,13 @@ class AppMonitorService : AccessibilityService() {
             private set
 
         fun isRunning(): Boolean = instance != null
+
+        fun stopAlertSound() {
+            instance?.mediaPlayer?.let {
+                if (it.isPlaying) it.stop()
+                it.release()
+            }
+            instance?.mediaPlayer = null
+        }
     }
 }

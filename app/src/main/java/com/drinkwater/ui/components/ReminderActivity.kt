@@ -34,6 +34,7 @@ import com.drinkwater.data.model.PopupMode
 import com.drinkwater.data.model.ReminderAction
 import com.drinkwater.data.model.ReminderLog
 import com.drinkwater.data.db.SettingsDataStore
+import com.drinkwater.service.AppMonitorService
 import com.drinkwater.ui.theme.DrinkWaterTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -96,6 +97,7 @@ class ReminderActivity : ComponentActivity() {
     }
 
     private fun handleAction(packageName: String, content: String, action: ReminderAction) {
+        AppMonitorService.stopAlertSound()
         lifecycleScope.launch {
             val db = (application as DrinkWaterApp).database
             db.reminderLogDao().insert(

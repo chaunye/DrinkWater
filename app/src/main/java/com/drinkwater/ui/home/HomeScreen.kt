@@ -657,15 +657,22 @@ fun MustReadCard() {
                         }
                         expanded = false
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (mustReadDismissed) Color.Gray else Color(0xFF4CAF50)
-                    )
+                        containerColor = if (mustReadDismissed) Color(0xFF9E9E9E) else Color(0xFF1976D2)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (mustReadDismissed) "已了解" else "我知道了", fontSize = 16.sp)
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(22.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        if (mustReadDismissed) "已了解" else "我知道了",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
