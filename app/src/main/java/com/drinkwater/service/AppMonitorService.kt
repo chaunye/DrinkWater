@@ -12,6 +12,7 @@ import android.media.ToneGenerator
 import android.media.AudioManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import com.drinkwater.DrinkWaterApp
 import com.drinkwater.MainActivity
@@ -29,20 +30,27 @@ class AppMonitorService : AccessibilityService() {
     private var lastTriggeredPackage: String? = null
     private var lastTriggerTime: Long = 0
     private var mediaPlayer: MediaPlayer? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
 
-        // Skip own app
+        // Skip own app and system UI
         if (packageName == applicationContext.packageName) return
+        if (packageName == "com.android.systemui") return
 
         // Debounce: ignore if same package within 2 seconds
         val now = System.currentTimeMillis()
         if (packageName == lastTriggeredPackage && now - lastTriggerTime < 2000) return
 
         scope.launch {
-            checkAndTrigger(packageName, now)
+            try {
+                checkAndTrigger(packageName, now)
+            } catch (e: Exception) {
+                // Log but don't crash
+                e.printStackTrace()
+            }
         }
     }
 
@@ -138,7 +146,15 @@ class AppMonitorService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        acquireWakeLock()
         startForegroundNotification()
+        ServiceKeepAliveWorker.schedule(applicationContext)
+    }
+
+    private fun acquireWakeLock() {
+        val pm = getSystemService(PowerManager::class.java)
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DrinkWater:MonitorService")
+        wakeLock?.acquire(24 * 60 * 60 * 1000L) // 24 hours max
     }
 
     private fun startForegroundNotification() {
@@ -149,7 +165,7 @@ class AppMonitorService : AccessibilityService() {
             val channel = NotificationChannel(
                 channelId,
                 "后台服务",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "保持应用监控服务运行"
                 setShowBadge(false)
@@ -224,6 +240,8 @@ class AppMonitorService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        wakeLock?.let { if (it.isHeld) it.release() }
+        wakeLock = null
         mediaPlayer?.release()
         mediaPlayer = null
         scope.cancel()

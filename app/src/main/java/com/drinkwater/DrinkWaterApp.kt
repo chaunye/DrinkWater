@@ -28,7 +28,7 @@ class DrinkWaterApp : Application() {
         val serviceChannel = NotificationChannel(
             CHANNEL_SERVICE,
             "后台服务",
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = "保持应用监控服务运行"
         }

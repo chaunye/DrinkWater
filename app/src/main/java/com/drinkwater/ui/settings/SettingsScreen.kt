@@ -88,6 +88,49 @@ fun SettingsScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Background keep-alive guide
+            SectionTitle("后台保活（重要）")
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFE65100))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("国产手机需要额外设置", fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("1. 设置 → 应用管理 → DrinkWater → 电池 → 选择「不限制」", fontSize = 13.sp)
+                    Text("2. 设置 → 应用管理 → DrinkWater → 自启动 → 开启", fontSize = 13.sp)
+                    Text("3. 最近任务中锁定 DrinkWater（下拉锁定）", fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("不同手机路径可能不同（小米/华为/OPPO/vivo），搜索「自启动」即可找到。", fontSize = 12.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                // Fallback to app details
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:${context.packageName}"))
+                                context.startActivity(intent)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("打开电池设置")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // Overlay permission
             SectionTitle("悬浮窗权限")
             Card(
