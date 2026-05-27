@@ -184,7 +184,7 @@ class AppMonitorService : AccessibilityService() {
             mediaPlayer = null
 
             if (!customUri.isNullOrBlank()) {
-                // Play custom sound
+                // Play custom sound from URI
                 mediaPlayer = MediaPlayer().apply {
                     setDataSource(applicationContext, Uri.parse(customUri))
                     setAudioAttributes(
@@ -198,15 +198,23 @@ class AppMonitorService : AccessibilityService() {
                     start()
                 }
             } else {
-                // Play default "咕咕" sound using ToneGenerator
-                scope.launch(Dispatchers.IO) {
-                    val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
-                    // Two short tones to mimic a "咕咕" sound
-                    toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
-                    delay(250)
-                    toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
-                    delay(300)
-                    toneGen.release()
+                // Try bundled resource first, fallback to ToneGenerator
+                val resId = resources.getIdentifier("tomori_gugagaga", "raw", packageName)
+                if (resId != 0) {
+                    mediaPlayer = MediaPlayer.create(applicationContext, resId)?.apply {
+                        setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                        start()
+                    }
+                } else {
+                    // Fallback: simple beep
+                    scope.launch(Dispatchers.IO) {
+                        val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+                        toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
+                        delay(250)
+                        toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
+                        delay(300)
+                        toneGen.release()
+                    }
                 }
             }
         } catch (e: Exception) {
