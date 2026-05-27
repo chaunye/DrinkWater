@@ -21,6 +21,7 @@ class SettingsDataStore(private val context: Context) {
         val GLOBAL_TIME_ENABLED = booleanPreferencesKey("global_time_enabled")
         val GLOBAL_START_TIME = stringPreferencesKey("global_start_time")
         val GLOBAL_END_TIME = stringPreferencesKey("global_end_time")
+        val ALERT_SOUND_ENABLED = booleanPreferencesKey("alert_sound_enabled")
     }
 
     val popupMode: Flow<String> = context.dataStore.data.map { it[POPUP_MODE] ?: "floating" }
@@ -32,6 +33,7 @@ class SettingsDataStore(private val context: Context) {
     val globalTimeEnabled: Flow<Boolean> = context.dataStore.data.map { it[GLOBAL_TIME_ENABLED] ?: false }
     val globalStartTime: Flow<String> = context.dataStore.data.map { it[GLOBAL_START_TIME] ?: "08:00" }
     val globalEndTime: Flow<String> = context.dataStore.data.map { it[GLOBAL_END_TIME] ?: "22:00" }
+    val alertSoundEnabled: Flow<Boolean> = context.dataStore.data.map { it[ALERT_SOUND_ENABLED] ?: true }
 
     suspend fun setPopupMode(mode: String) {
         context.dataStore.edit { it[POPUP_MODE] = mode }
@@ -67,5 +69,9 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setGlobalEndTime(time: String) {
         context.dataStore.edit { it[GLOBAL_END_TIME] = time }
+    }
+
+    suspend fun setAlertSoundEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[ALERT_SOUND_ENABLED] = enabled }
     }
 }

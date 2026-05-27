@@ -1,5 +1,6 @@
 package com.drinkwater.ui.monitor
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -321,6 +322,8 @@ fun AppConfigDialog(app: MonitoredApp, onDismiss: () -> Unit) {
     var endTime by remember { mutableStateOf(app.endTime) }
     var popupImageUri by remember { mutableStateOf(app.popupImageUri) }
     var backgroundImageUri by remember { mutableStateOf(app.backgroundImageUri) }
+    var alertSoundUri by remember { mutableStateOf(app.alertSoundUri) }
+    var alertEnabled by remember { mutableStateOf(app.alertEnabled) }
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -340,6 +343,19 @@ fun AppConfigDialog(app: MonitoredApp, onDismiss: () -> Unit) {
             backgroundImageUri = it.toString()
             scope.launch {
                 db.monitoredAppDao().update(app.copy(backgroundImageUri = it.toString()))
+            }
+        }
+    }
+
+    val audioPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            // Take persistable permission
+            context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            alertSoundUri = it.toString()
+            scope.launch {
+                db.monitoredAppDao().update(app.copy(alertSoundUri = it.toString()))
             }
         }
     }
@@ -461,6 +477,59 @@ fun AppConfigDialog(app: MonitoredApp, onDismiss: () -> Unit) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("选择图片", fontSize = 12.sp)
                             }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("提醒声音", fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Notifications, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("播放提醒声音", modifier = Modifier.weight(1f), fontSize = 14.sp)
+                    Switch(
+                        checked = alertEnabled,
+                        onCheckedChange = {
+                            alertEnabled = it
+                            scope.launch {
+                                db.monitoredAppDao().update(app.copy(alertEnabled = it))
+                            }
+                        }
+                    )
+                }
+                if (alertEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (alertSoundUri != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("已选自定义音频", fontSize = 13.sp, color = Color(0xFF4CAF50), modifier = Modifier.weight(1f))
+                            IconButton(onClick = {
+                                alertSoundUri = null
+                                scope.launch {
+                                    db.monitoredAppDao().update(app.copy(alertSoundUri = null))
+                                }
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Close, contentDescription = "删除", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    } else {
+                        Text("默认播放「咕咕」提示音，也可自定义音频", fontSize = 12.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        OutlinedButton(
+                            onClick = { audioPicker.launch("audio/*") },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("选择自定义音频")
                         }
                     }
                 }

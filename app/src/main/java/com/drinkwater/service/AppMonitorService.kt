@@ -6,6 +6,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.MediaPlayer
+import android.media.ToneGenerator
+import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import com.drinkwater.DrinkWaterApp
@@ -23,6 +28,7 @@ class AppMonitorService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var lastTriggeredPackage: String? = null
     private var lastTriggerTime: Long = 0
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
@@ -100,6 +106,12 @@ class AppMonitorService : AccessibilityService() {
         lastTriggeredPackage = packageName
         lastTriggerTime = now
 
+        // Play alert sound
+        val globalSoundEnabled = settings.alertSoundEnabled.first()
+        if (app.alertEnabled && globalSoundEnabled) {
+            playAlertSound(app.alertSoundUri)
+        }
+
         // Get popup mode - use Activity approach for reliable top-of-screen display
         val globalPopupMode = settings.popupMode.first()
         val popupMode = if (app.popupMode == PopupMode.FLOATING) "floating" else globalPopupMode
@@ -166,8 +178,46 @@ class AppMonitorService : AccessibilityService() {
         }
     }
 
+    private fun playAlertSound(customUri: String? = null) {
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = null
+
+            if (!customUri.isNullOrBlank()) {
+                // Play custom sound
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(applicationContext, Uri.parse(customUri))
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_EVENT)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                    prepare()
+                    start()
+                }
+            } else {
+                // Play default "咕咕" sound using ToneGenerator
+                scope.launch(Dispatchers.IO) {
+                    val toneGen = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
+                    // Two short tones to mimic a "咕咕" sound
+                    toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
+                    delay(250)
+                    toneGen.startTone(ToneGenerator.TONE_PROP_ACK, 200)
+                    delay(300)
+                    toneGen.release()
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore sound errors - don't crash the service
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
         scope.cancel()
         instance = null
         // Schedule restart

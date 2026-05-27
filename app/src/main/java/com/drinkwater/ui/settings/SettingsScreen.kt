@@ -35,6 +35,7 @@ fun SettingsScreen() {
     val popupMode by settings.popupMode.collectAsState(initial = "floating")
     val delayMinutes by settings.delayMinutes.collectAsState(initial = 5)
     val notificationsEnabled by settings.notificationsEnabled.collectAsState(initial = true)
+    val alertSoundEnabled by settings.alertSoundEnabled.collectAsState(initial = true)
     val serviceRunning = AppMonitorService.isRunning()
     val canOverlay = remember { Settings.canDrawOverlays(context) }
 
@@ -207,6 +208,18 @@ fun SettingsScreen() {
                 onCheckedChange = { scope.launch { settings.setNotificationsEnabled(it) } }
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Alert sound
+            SectionTitle("提醒声音")
+            SettingsToggle(
+                icon = Icons.Default.VolumeUp,
+                title = "检测到应用时播放声音",
+                subtitle = "打开监控的应用时播放「咕咕」提示音，支持自定义",
+                checked = alertSoundEnabled,
+                onCheckedChange = { scope.launch { settings.setAlertSoundEnabled(it) } }
+            )
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // About
@@ -216,7 +229,7 @@ fun SettingsScreen() {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("DrinkWater v1.1.0", fontWeight = FontWeight.Medium)
+                    Text("DrinkWater v1.2.0", fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("开源离线自律提醒工具", fontSize = 13.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(4.dp))
